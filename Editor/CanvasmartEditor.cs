@@ -10,29 +10,40 @@ namespace Canvasmart.Editor
     [CanEditMultipleObjects]
     public class CanvasmartEditor : UnityEditor.Editor
     {
+        SerializedProperty SectorSize;
+        SerializedProperty ModeName;
         public override void OnInspectorGUI()
         {
+            serializedObject.Update();
             Canvasmart canvasmart = target as Canvasmart;
             RectTransform rt = canvasmart.transform as RectTransform;
 
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("轴线定位"))
+            Canvasmart.EnumLayoutMode(m =>
             {
-                canvasmart.SetLayoutMode(Canvasmart.LayoutModeTag.CrossLine);
-                canvasmart.ToAll(go => canvasmart.SetBehaviour(go, canvasmart.InferAutoBehaviour(go)), true);
-                // canvasmart.ToAll(go => Debug.Log(go), true);
-
-            }
-            if (GUILayout.Button("均匀扩展"))
-            {
-                canvasmart.SetLayoutMode(Canvasmart.LayoutModeTag.UniformExpand);
-                canvasmart.ToAll(go => canvasmart.SetBehaviour(go, canvasmart.InferAutoBehaviour(go)), true);
-            }
+                LayoutMode mode = canvasmart.GetLayoutMode(m);
+                if (GUILayout.Button(mode.Name))
+                {
+                    canvasmart.SetLayoutMode(m);
+                    canvasmart.ToAll(go => canvasmart.SetBehaviour(go, canvasmart.InferAutoBehaviour(go)), true);
+                    // canvasmart.ToAll(go => Debug.Log(go), true);
+                }
+            });
             EditorGUILayout.EndHorizontal();
+
+            EditorGUILayout.PropertyField(SectorSize);
+            EditorGUILayout.PropertyField(ModeName);
             if (GUILayout.Button("布局编辑器"))
             {
                 CanvasmartEditorWindow.ShowWindow(canvasmart);
             }
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        void OnEnable()
+        {
+            SectorSize = serializedObject.FindProperty("SectorSize");
+            ModeName = serializedObject.FindProperty("ModeName");
         }
     }
 }

@@ -3,9 +3,9 @@ using UnityEngine;
 namespace Canvasmart
 {
 
-    public class LayoutModeUniformExpand : LayoutMode
+    public class UniformTensionMode : LayoutMode
     {
-        public override string Name => "均匀扩展";
+        public override string Name => "均匀拉伸";
 
         public override LayoutBehaviour InferBehaviour(GameObject go)
         {

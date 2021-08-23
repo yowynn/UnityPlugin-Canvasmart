@@ -1,7 +1,22 @@
 using UnityEngine;
+using System;
 
 namespace Canvasmart
 {
+    [Flags]
+    public enum AnchorPrefab
+    {
+        Left        = 0b_0000_1000,
+        Center      = 0b_0000_0100,
+        Right       = 0b_0000_0010,
+        Xstretch    = 0b_0000_0001,
+        XMask       = 0b_0000_1111,
+        Bottom      = 0b_1000_0000,
+        Middle      = 0b_0100_0000,
+        Top         = 0b_0010_0000,
+        Ystretch    = 0b_0001_0000,
+        YMask       = 0b_1111_0000,
+    }
     public enum LayoutBehaviour
     {
         Custom = 0,                                             // 自定义
@@ -31,6 +46,12 @@ namespace Canvasmart
         {
             return Mathf.Abs(a - b) < Precision;
         }
+
+        public static bool Vector2Equals(Vector2 a, Vector2 b)
+        {
+            return FloatEquals(a.x, b.x) && FloatEquals(a.y, b.y);
+        }
+
         public static Rect FloatPositiveRect(Rect rect)
         {
             if (rect.width <= .0f)

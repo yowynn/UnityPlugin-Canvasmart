@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor.UIElements;
+using System.Collections.Generic;
 
 namespace Canvasmart.Editor
 {
@@ -12,6 +13,7 @@ namespace Canvasmart.Editor
         {
             CanvasmartEditorWindow wnd = GetWindow<CanvasmartEditorWindow>();
             wnd.titleContent = new GUIContent("Canvasmart");
+            wnd.SetCurrLayouter(null);
             return wnd;
         }
 
@@ -22,23 +24,84 @@ namespace Canvasmart.Editor
             return wnd;
         }
 
+        public List<Canvasmart> GetAllCanvasmarts()
+        {
+            List<Canvasmart> list = new List<Canvasmart>();
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; i++)
+            {
+                var scene = UnityEngine.SceneManagement.SceneManager.GetSceneAt(i);
+                foreach(var go in scene.GetRootGameObjects())
+                {
+                    var array = go.GetComponentsInChildren<Canvasmart>(true);
+                    foreach(var c in array)
+                    {
+                        list.Add(c);
+                    }
+                }
+            }
+            var CanvasSelector = rootVisualElement.Q("ToolBar").Q("CanvasSelector") as ToolbarMenu;
+            CanvasSelector.menu.MenuItems().Clear();
+            foreach (var c in list)
+            {
+                CanvasSelector.menu.AppendAction(c.name, action =>
+                {
+                    SetCurrLayouter(c);
+                });
+            }
+
+            return list;
+        }
+
         private Canvasmart layouter;
         private GameObjectCell Root;
 
         private VisualElement HierarchyPanel;
 
-        public void SetCurrLayouter(Canvasmart layouter)
+        public void SetCurrLayouter(Canvasmart layouter = null)
         {
+            if (layouter != null)
+            {
+                var layouters = GetAllCanvasmarts();
+                if (layouters.Contains(layouter))
+                {
+                    if (layouter == this.layouter)
+                        return;
+                }
+                else
+                {
+                    layouter = null;
+                }
+            }
+            if (layouter == null)
+            {
+                var layouters = GetAllCanvasmarts();
+                if (layouters.Count > 0)
+                {
+                    layouter = layouters[0];
+                }
+            }
             this.layouter = layouter;
             HierarchyPanel.Clear();
-            if (layouter != null){
+            var Mode = rootVisualElement.Q("ToolBar").Q("Mode") as ToolbarMenu;
+            if (layouter != null)
+            {
                 var go = layouter.gameObject;
                 Root = new GameObjectCell(layouter, go);
                 HierarchyPanel.Add(Root);
+                Canvasmart.EnumLayoutMode(m =>
+                {
+                    LayoutMode mode = layouter.GetLayoutMode(m);
+                    Mode.menu.AppendAction(mode.Name, action =>
+                    {
+                        layouter.SetLayoutMode(m);
+                    });
+                });
+                Mode.SetEnabled(true);
             }
             else
             {
                 Root = null;
+                Mode.SetEnabled(false);
             }
         }
 
@@ -50,18 +113,13 @@ namespace Canvasmart.Editor
             ToolBar.name = "ToolBar";
             root.Add(ToolBar);
 
+            var CanvasSelector = new ToolbarMenu();
+            CanvasSelector.name = "CanvasSelector";
+            CanvasSelector.style.width = 250;
+            ToolBar.Add(CanvasSelector);
+
             var Mode = new ToolbarMenu();
             Mode.name = "Mode";
-            var mUniformExpand = new LayoutModeUniformExpand();
-            Mode.menu.AppendAction(mUniformExpand.Name, action =>
-            {
-                layouter.SetLayoutMode(new LayoutModeUniformExpand());
-            });
-            var mCrossLine = new LayoutModeCrossLine();
-            Mode.menu.AppendAction(mCrossLine.Name, action =>
-            {
-                layouter.SetLayoutMode(new LayoutModeCrossLine());
-            });
             ToolBar.Add(Mode);
 
             var Run = new ToolbarButton();
@@ -78,15 +136,27 @@ namespace Canvasmart.Editor
 
         public void OnGUI()
         {
+            SetCurrLayouter(layouter);
             if (Root != null)
             {
                 Root.UpdateCell(true);
             }
-            (rootVisualElement.Q("ToolBar").Q("Mode") as ToolbarMenu).text = layouter.GetLayoutMode().Name;
+            var CanvasSelector = rootVisualElement.Q("ToolBar").Q("CanvasSelector") as ToolbarMenu;
+            if (layouter != null)
+            {
+                (rootVisualElement.Q("ToolBar").Q("Mode") as ToolbarMenu).text = layouter.GetLayoutMode().Name;
+                CanvasSelector.text = layouter.name;
+            }
+            else
+            {
+                CanvasSelector.text = "——";
+            }
+
         }
 
         public void OnHierarchyChange()
         {
+            SetCurrLayouter(layouter);
             if (Root != null)
             {
                 Root.ResetChildList(true);

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,22 +10,61 @@ namespace Canvasmart
     [DisallowMultipleComponent]
     public class Canvasmart : MonoBehaviour
     {
-        public delegate void OnEnum(GameObject go);
+        public delegate void OnEnumGameObject(GameObject go);
+        public delegate void OnEnumLayoutMode(LayoutModeTag m);
         public enum LayoutModeTag
         {
-            UniformExpand,
-            CrossLine,
-            CrossMesh,
+            UniformTension,
+            CentralAxis,
+            CentralSector,
+        }
+
+        private Dictionary<LayoutModeTag, LayoutMode> ModeMap;
+
+        [SerializeField] private int m_test;
+        private void InitLayoutMode()
+        {
+            ModeMap = new Dictionary<LayoutModeTag, LayoutMode>();
+            EnumLayoutMode(m =>
+            {
+                switch (m)
+                {
+                    case LayoutModeTag.UniformTension:
+                        {
+                            var mode = new UniformTensionMode();
+                            ModeMap.Add(m, mode);
+                            break;
+                        }
+                    case LayoutModeTag.CentralAxis:
+                        {
+                            var mode = new CentralAxisMode();
+                            ModeMap.Add(m, mode);
+                            break;
+                        }
+                    case LayoutModeTag.CentralSector:
+                        {
+                            var mode = new CentralSectorMode();
+                            mode.SectorSize = SectorSize;
+                            ModeMap.Add(m, mode);
+                            break;
+                        }
+                    default:
+                        {
+                            throw new Exception("未定义对应模式");
+                        }
+                }
+            });
         }
 
         [Tooltip("自动布局模式")]
-        public LayoutModeTag ModeName = LayoutModeTag.UniformExpand;
+        public LayoutModeTag ModeName = LayoutModeTag.UniformTension;
         protected LayoutMode Mode;
         [Tooltip("UI的参考分辨率")]
         public Vector2 ReferenceResolution = new Vector2(2048, 1151);
         [Tooltip("忽略物件列表")]
         public List<GameObject> IgnoredList = new List<GameObject>();
-
+        [Tooltip("中宫定位模式的中宫比例")]
+        public Vector2 SectorSize = new Vector2(1f / 3, 1f / 3);
         public bool IsLegal(GameObject go, bool canvasIllegal = false)
         {
             if(go == gameObject)
@@ -33,8 +73,21 @@ namespace Canvasmart
             }
             else
             {
-                return Mode.IsLayoutNode(go);
+                return Mode.IsLayoutNode(go) && IsInDirectControl(go);
             }
+        }
+
+        public bool IsInDirectControl(GameObject go)
+        {
+            var t = go.transform.parent;
+            while(t != null)
+            {
+                var c = t.GetComponent<Canvasmart>();
+                if (c != null)
+                    return c == this;
+                t = t.parent;
+            }
+            return false;
         }
         public void AddToIgnoredList(GameObject go)
         {
@@ -75,45 +128,35 @@ namespace Canvasmart
 
         public void SetLayoutMode(LayoutModeTag m)
         {
-            ModeName = m;
-            switch (m)
-            {
-                case LayoutModeTag.UniformExpand:
-                    {
-                        Mode = new LayoutModeUniformExpand();
-                        break;
-                    }
-                case LayoutModeTag.CrossLine:
-                    {
-                        Mode = new LayoutModeCrossLine();
-                        break;
-                    }
-            }
-        }
-
-        public void SetLayoutMode(LayoutMode m)
-        {
-            Mode = m;
-            if (m is LayoutModeUniformExpand)
-            {
-                ModeName = LayoutModeTag.UniformExpand;
-            }
-            else if (m is LayoutModeCrossLine)
-            {
-                ModeName = LayoutModeTag.CrossLine;
-            }
+            if (ModeMap == null)
+                InitLayoutMode();
+            if (ModeMap.TryGetValue(m, out Mode))
+                ModeName = m;
+            else
+                throw new Exception("Mode not find");
         }
 
         public LayoutMode GetLayoutMode()
         {
+            if(Mode == null)
+                SetLayoutMode(ModeName);
             return Mode;
         }
 
-        public void ToAll(OnEnum onEnum, bool useIgnoreList)
+        public LayoutMode GetLayoutMode(LayoutModeTag m)
+        {
+            if (ModeMap == null)
+                InitLayoutMode();
+            LayoutMode mode;
+            ModeMap.TryGetValue(m, out mode);
+            return mode;
+        }
+
+        public void ToAll(OnEnumGameObject onEnum, bool useIgnoreList)
         {
             ToAll(onEnum, useIgnoreList, gameObject);
         }
-        private void ToAll(OnEnum onEnum, bool useIgnoreList, GameObject go)
+        private void ToAll(OnEnumGameObject onEnum, bool useIgnoreList, GameObject go)
         {
             if (IsLegal(go))
             {
@@ -154,11 +197,30 @@ namespace Canvasmart
             }
         }
 
+        public static void EnumLayoutMode(OnEnumLayoutMode cb)
+        {
+            foreach (LayoutModeTag m in Enum.GetValues(typeof(LayoutModeTag)))
+                cb(m);
+        }
+
+        void Awake()
+        {
+            InitLayoutMode();
+        }
+#if UNITY_EDITOR
+
         void OnValidate()
         {
             SetLayoutMode(ModeName);
+            SectorSize.x = Mathf.Min(1, Mathf.Max(0, SectorSize.x));
+            SectorSize.y = Mathf.Min(1, Mathf.Max(0, SectorSize.y));
+            (GetLayoutMode(LayoutModeTag.CentralSector) as CentralSectorMode).SectorSize = SectorSize;
         }
-
+        void Reset()
+        {
+            SectorSize = new Vector2(1f / 3, 1f / 3);
+        }
+#endif
         void Start()
         {
 

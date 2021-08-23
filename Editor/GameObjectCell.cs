@@ -208,24 +208,22 @@ namespace Canvasmart.Editor
             ChildList.Clear();
             var Fold = this.Q("Self").Q("Fold");
             Transform t = gameObject.transform;
-            if (t.childCount > 0)
+            int legelChildCount = 0;
+            for (int i = 0; i < t.childCount; i++)
             {
-                for (int i = 0; i < t.childCount; i++)
+                var go = t.GetChild(i).gameObject;
+                if (layouter.IsLegal(go))
                 {
-                    var go = t.GetChild(i).gameObject;
                     GameObjectCell child;
                     if (!map.TryGetValue(go, out child))
                         child = new GameObjectCell(layouter, go);
                     else if (onChildren)
                         child.ResetChildList(true);
                     ChildList.Add(child);
+                    legelChildCount++;
                 }
-                Fold.visible = true;
             }
-            else
-            {
-                Fold.visible = false;
-            }
+            Fold.visible = legelChildCount > 0;
         }
 
         public string GetBehaviourOption()
