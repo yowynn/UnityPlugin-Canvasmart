@@ -30,9 +30,15 @@ namespace Canvasmart.Editor
                 }
             });
             EditorGUILayout.EndHorizontal();
-
-            EditorGUILayout.PropertyField(SectorSize);
             EditorGUILayout.PropertyField(ModeName);
+            if ((Canvasmart.LayoutModeTag)ModeName.enumValueIndex == Canvasmart.LayoutModeTag.CentralSector)
+            {
+                canvasmart.ShowGizmos = EditorGUILayout.Foldout(canvasmart.ShowGizmos, "显示中宫辅助线");
+                if (canvasmart.ShowGizmos)
+                {
+                        EditorGUILayout.PropertyField(SectorSize);
+                }
+            }
             if (GUILayout.Button("布局编辑器"))
             {
                 CanvasmartEditorWindow.ShowWindow(canvasmart);

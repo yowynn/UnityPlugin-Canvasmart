@@ -19,9 +19,10 @@ namespace Canvasmart
             CentralSector,
         }
 
+
         private Dictionary<LayoutModeTag, LayoutMode> ModeMap;
 
-        [SerializeField] private int m_test;
+        public bool ShowGizmos { get; set; } = false;
         private void InitLayoutMode()
         {
             ModeMap = new Dictionary<LayoutModeTag, LayoutMode>();
@@ -203,6 +204,35 @@ namespace Canvasmart
                 cb(m);
         }
 
+        public void GizmosDrawSectorSize()
+        {
+            Gizmos.color = new Color(1, 1, 1, 1);
+            var rt = transform as RectTransform;
+            var pos = rt.position;
+            var scale = rt.lossyScale;
+            var area = rt.rect;
+            area.xMin *= scale.x;
+            area.xMax *= scale.x;
+            area.yMin *= scale.y;
+            area.yMax *= scale.y;
+            var deltaSize = (Vector2.one - SectorSize) / 2;
+            var rect = new Rect(area.position + area.size * deltaSize, area.size * SectorSize);
+
+            var x01 = rt.position.x + area.xMin;
+            var x02 = rt.position.x + area.xMax;
+            var x03 = rt.position.x + rect.xMin;
+            var x04 = rt.position.x + rect.xMax;
+            var y01 = rt.position.y + area.yMin;
+            var y02 = rt.position.y + area.yMax;
+            var y03 = rt.position.y + rect.yMin;
+            var y04 = rt.position.y + rect.yMax;
+            var z = rt.position.z;
+            Gizmos.DrawLine(new Vector3(x01, y03, z), new Vector3(x02, y03, z));
+            Gizmos.DrawLine(new Vector3(x01, y04, z), new Vector3(x02, y04, z));
+            Gizmos.DrawLine(new Vector3(x03, y01, z), new Vector3(x03, y02, z));
+            Gizmos.DrawLine(new Vector3(x04, y01, z), new Vector3(x04, y02, z));
+        }
+
         void Awake()
         {
             InitLayoutMode();
@@ -221,14 +251,14 @@ namespace Canvasmart
             SectorSize = new Vector2(1f / 3, 1f / 3);
         }
 #endif
-        void Start()
-        {
 
-        }
-
-        // Update is called once per frame
-        void Update()
+        void OnDrawGizmosSelected()
         {
+            // Display the explosion radius when selected
+            if (ShowGizmos)
+            {
+                GizmosDrawSectorSize();
+            }
 
         }
     }
