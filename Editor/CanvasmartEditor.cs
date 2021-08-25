@@ -39,11 +39,46 @@ namespace Canvasmart.Editor
                         EditorGUILayout.PropertyField(SectorSize);
                 }
             }
+            if (GUILayout.Button("自动设置Canvas"))
+            {
+                InitEditParams();
+            }
             if (GUILayout.Button("布局编辑器"))
             {
                 CanvasmartEditorWindow.ShowWindow(canvasmart);
             }
             serializedObject.ApplyModifiedProperties();
+        }
+
+        public void InitEditParams()
+        {
+            Canvasmart canvasmart = target as Canvasmart;
+            var canvas = canvasmart.GetComponent<Canvas>();
+            if (canvas != null)
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.planeDistance = 10;
+            }
+            var canvasScaler = canvasmart.GetComponent<UnityEngine.UI.CanvasScaler>();
+            if (canvasScaler != null)
+            {
+                canvasScaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                canvasScaler.referenceResolution = canvasmart.ReferenceResolution;
+                canvasScaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.Expand;
+                canvasScaler.referencePixelsPerUnit = 100;
+            }
+
+            int w = (int)canvasmart.ReferenceResolution.x;
+            int h = (int)canvasmart.ReferenceResolution.y;
+            int i = GameViewUtils.FindSize(GameViewSizeGroupType.Standalone, w, h);
+            if (i == -1){
+                GameViewUtils.AddCustomSize(GameViewUtils.GameViewSizeType.FixedResolution, GameViewSizeGroupType.Standalone, w, h, "UIEditerMode");
+                i = GameViewUtils.FindSize(GameViewSizeGroupType.Standalone, "UIEditerMode");
+            }
+            if (i != -1){
+                GameViewUtils.SetSize(i);
+            }
+
         }
 
         void OnEnable()
