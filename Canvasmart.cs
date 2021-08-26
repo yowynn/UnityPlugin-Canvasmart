@@ -107,7 +107,10 @@ namespace Canvasmart
 
         public LayoutBehaviour InferBehaviour(GameObject go)
         {
-            return Mode.InferBehaviour(go);
+            EnterProtectScreenMode();
+            var b = Mode.InferBehaviour(go);
+            QuitProtectScreenMode();
+            return b;
         }
 
         public LayoutBehaviour InferAutoBehaviour(GameObject go)

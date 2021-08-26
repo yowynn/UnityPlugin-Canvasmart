@@ -103,7 +103,7 @@ namespace Canvasmart
             var area = (rt.parent as RectTransform).rect;
             var deltaSize = (Vector2.one - SectorSize) / 2;
 
-            var pos = rt.localPosition;
+            var pos = rt.rect.center + (Vector2)rt.localPosition;
             var rect = new Rect(area.position + area.size * deltaSize, area.size * SectorSize);
 
             if (rt.anchorMin.x != rt.anchorMax.x)
