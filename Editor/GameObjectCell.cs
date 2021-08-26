@@ -121,8 +121,11 @@ namespace Canvasmart.Editor
             UpdateColor();
 
             var Children = this.Q("Children");
-            if (isFold && Children.Contains(ChildList))
-                Children.Remove(ChildList);
+            if (isFold)
+            {
+                if (Children.Contains(ChildList))
+                    Children.Remove(ChildList);
+            }
             else
             {
                 if (!Children.Contains(ChildList))
