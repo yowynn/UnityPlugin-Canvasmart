@@ -43,6 +43,11 @@ namespace Canvasmart.Editor
             {
                 InitEditParams();
             }
+            if (GUILayout.Button("自动适应Rect"))
+            {
+                foreach (var child in canvasmart.transform as RectTransform)
+                    RectTransformUtil.AutoSize(child as RectTransform, true);
+            }
             if (GUILayout.Button("布局编辑器"))
             {
                 CanvasmartEditorWindow.ShowWindow(canvasmart);
